@@ -1,5 +1,5 @@
 from LTLFormule import *
-from typing import Text
+from typing import Text, ClassVar
 
 class And(LTLFormule):
     comp1 : LTLFormule
@@ -153,6 +153,81 @@ class Release(LTLFormule):
         return Until(self.comp1.neg(), self.comp2.neg())
 
 
-def ReadFormule(s : Text) -> LTLFormule:
-    
-    pass
+
+class Variable(LTLFormule):
+    _neg:bool
+    name:str
+
+    def __init__(self, name):
+        self.name = name
+        self._neg = False
+
+    def getType(self) -> OperatorType:
+        return OperatorType.VARIABLE
+
+    def getComponents(self) -> List[LTLFormule]:
+            return []
+
+    def neg(self) -> LTLFormule:
+        self._neg = True
+        return self
+
+def readFormule(s : Text) -> LTLFormule:
+
+    def getOperatorFromString(op : Text) -> ClassVar[LTLFormule]:
+        if(op == "G") : return Globally
+        elif(op == "F") : return Finally
+        elif(op == "N") : return Next
+        elif(op == "U") : return Until
+        elif(op == "R") : return Release
+        elif(op == "&") : return And
+        elif(op == "|") : return Or
+        elif(op == ">") : return Implies
+
+    unary = ["G", "F", "N", "!"]
+    binaryOrder = [ "U", "R", "&", "|", ">"]
+    maxOp = -1
+    maxOpIndexB = -1
+
+    parentheseDeepness = 0
+    hasParenthese = False
+
+
+    for i in range(len(s)):
+        if(s[i] == "("):
+            parentheseDeepness += 1
+            hasParenthese = True
+            continue
+        if(s[i] == ")"):
+            parentheseDeepness -= 1
+            continue
+        if(parentheseDeepness == 0 and s[i] in binaryOrder):
+            idx = binaryOrder.index(s[i])
+
+            if(idx >= maxOpIndexB):
+                maxOp = i
+                maxOpIndexB = idx
+
+    if(maxOpIndexB < 0):
+        for i in range(len(s)):
+            if(s[i] in unary):
+                if(s[i] == "!"):
+                    return readFormule(s[i+1:]).neg()
+                else:
+                    return getOperatorFromString(s[i])(readFormule(s[i+1:]))
+        if(hasParenthese):
+            return readFormule(s[s.find('(')+1:s.find(')')])
+        else:
+            return Variable(s)
+    else :
+        return getOperatorFromString(s[maxOp])(readFormule(s[:maxOp]), readFormule(s[maxOp+1:]))
+
+
+
+print(readFormule("a&(a|b)"))
+
+
+
+
+
+

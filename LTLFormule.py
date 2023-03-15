@@ -7,6 +7,7 @@ class OperatorType (Enum):
     CONJONCTIVE = 1
     DISJONCTIVE = 2
     SUCCESSOR = 3
+    VARIABLE = 4
 
 
 
