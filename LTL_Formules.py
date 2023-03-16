@@ -169,7 +169,7 @@ class Variable(LTLFormule):
             return []
 
     def neg(self) -> LTLFormule:
-        self._neg = True
+        self._neg = not self._neg
         return self
 
 def readFormule(s : Text) -> LTLFormule:
