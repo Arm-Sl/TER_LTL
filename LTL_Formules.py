@@ -209,6 +209,7 @@ def readFormule(s : Text) -> LTLFormule:
 
 
 
+
 print(readFormule("a&(a|b)"))
 
 
