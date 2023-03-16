@@ -28,5 +28,10 @@ class LTLFormule(ABC):
 
 
 
+class LTLFormuleSet:
+    formules : LTLFormule
+
+    def fullExpansion(self):
+        pass
 
 
