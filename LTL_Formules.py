@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from LTLFormule import *
 from typing import Text, ClassVar
 
@@ -18,14 +20,6 @@ class And(LTLFormule):
     def neg(self) -> LTLFormule:
         return Or(self.comp1.neg(), self.comp2.neg())
 
-
-
-
-
-
-
-
-
 class Or(LTLFormule):
     comp1 : LTLFormule
     comp2 : LTLFormule
@@ -42,10 +36,6 @@ class Or(LTLFormule):
 
     def neg(self) -> LTLFormule:
         return And(self.comp1.neg(), self.comp2.neg())
-
-
-
-
 
 class Implies(LTLFormule):
     comp1 : LTLFormule
@@ -65,9 +55,6 @@ class Implies(LTLFormule):
     def neg(self) -> LTLFormule:
         return And(self.comp1, self.comp2.neg())
 
-
-
-
 class Next(LTLFormule):
     comp1 : LTLFormule
 
@@ -82,7 +69,6 @@ class Next(LTLFormule):
 
     def neg(self) -> LTLFormule:
         return self.comp1.neg()
-
 
 class Globally(LTLFormule):
     comp1 : LTLFormule
@@ -114,7 +100,6 @@ class Finally(LTLFormule):
     def neg(self) -> LTLFormule:
         return Globally(self.comp1.neg())
 
-
 class Until(LTLFormule):
     comp1 : LTLFormule
     comp2 : LTLFormule
@@ -132,7 +117,6 @@ class Until(LTLFormule):
 
     def neg(self) -> LTLFormule:
         return Release(self.comp1.neg(), self.comp2.neg())
-
 
 class Release(LTLFormule):
     comp1 : LTLFormule
@@ -152,8 +136,6 @@ class Release(LTLFormule):
     def neg(self) -> LTLFormule:
         return Until(self.comp1.neg(), self.comp2.neg())
 
-
-
 class Variable(LTLFormule):
     _neg:bool
     name:str
@@ -171,6 +153,9 @@ class Variable(LTLFormule):
     def neg(self) -> LTLFormule:
         self._neg = not self._neg
         return self
+
+
+
 
 def readFormule(s : Text) -> LTLFormule:
 
@@ -225,6 +210,8 @@ def readFormule(s : Text) -> LTLFormule:
 
 
 print(readFormule("a&(a|b)"))
+
+
 
 
 

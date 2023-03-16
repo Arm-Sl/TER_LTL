@@ -1,7 +1,7 @@
 from enum import Enum
 from abc import ABC
 from abc import abstractmethod
-from typing import List, Self
+from typing import List
 
 class OperatorType (Enum):
     CONJONCTIVE = 1
@@ -18,10 +18,15 @@ class LTLFormule(ABC):
         pass
 
     @abstractmethod
-    def getComponents(self) -> List[Self] :
+    def getComponents(self) -> List['LTLFormule'] :
         pass
 
     @abstractmethod
-    def neg(self) -> Self:
+    def neg(self) -> 'LTLFormule':
         pass
+
+
+
+
+
 
