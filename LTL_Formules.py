@@ -1,7 +1,8 @@
-from copy import deepcopy
+from copy import deepcopy, copy
 
 from LTLFormula import *
-from typing import Text, ClassVar
+from typing import Text, ClassVar, Any
+
 
 class And(LTLFormula):
     comp1 : LTLFormula
@@ -23,6 +24,9 @@ class And(LTLFormula):
     def __str__(self):
         return "(" + str(self.comp1) + ")" + "&" + "(" + str(self.comp2) + ")"
 
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, And) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
+
 class Or(LTLFormula):
     comp1 : LTLFormula
     comp2 : LTLFormula
@@ -42,6 +46,9 @@ class Or(LTLFormula):
 
     def __str__(self):
          return "(" + str(self.comp1) + ")" + "|" + "(" + str(self.comp2) + ")"
+
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, Or) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
 
 class Implies(LTLFormula):
     comp1 : LTLFormula
@@ -64,6 +71,9 @@ class Implies(LTLFormula):
     def __str__(self):
         return "(" + str(self.comp1) + ")" + ">" + "(" + str(self.comp2) + ")"
 
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, Implies) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
+
 class Next(LTLFormula):
     comp1 : LTLFormula
 
@@ -81,6 +91,9 @@ class Next(LTLFormula):
 
     def __str__(self):
         return "N(" + str(self.comp1) + ")"
+
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, Next) and (self.comp1 == other.comp1)
 
 class Globally(LTLFormula):
     comp1 : LTLFormula
@@ -100,6 +113,9 @@ class Globally(LTLFormula):
     def __str__(self):
         return "G(" + str(self.comp1) + ")"
 
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, Globally) and (self.comp1 == other.comp1)
+
 class Finally(LTLFormula):
     comp1 : LTLFormula
 
@@ -117,6 +133,9 @@ class Finally(LTLFormula):
 
     def __str__(self):
         return "F(" + str(self.comp1) + ")"
+
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, Finally) and (self.comp1 == other.comp1)
 
 class Until(LTLFormula):
     comp1 : LTLFormula
@@ -139,6 +158,9 @@ class Until(LTLFormula):
     def __str__(self):
         return "(" + str(self.comp1) + ")" + "U" + "(" + str(self.comp2) + ")"
 
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, Until) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
+
 class Release(LTLFormula):
     comp1 : LTLFormula
     comp2 : LTLFormula
@@ -160,6 +182,9 @@ class Release(LTLFormula):
     def __str__(self):
         return "(" + str(self.comp1) + ")" + "R" + "(" + str(self.comp2) + ")"
 
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, Release) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
+
 class Variable(LTLFormula):
     _neg:bool
     name:str
@@ -175,15 +200,20 @@ class Variable(LTLFormula):
             return []
 
     def neg(self) -> LTLFormula:
-        self._neg = not self._neg
-        return self
+        cpy = Variable(self.name)
+        cpy._neg = not self._neg
+        return cpy
 
     def __str__(self):
         return ("!" if self._neg else "") + self.name
 
+    def __eq__(self, other : Any) -> bool:
+        return isinstance(other, Variable) and (self.name == other.name and self._neg == other._neg)
+
 
 def readFormule(s : Text) -> LTLFormula:
 
+    print(s)
     def getOperatorFromString(op : Text) -> ClassVar[LTLFormula]:
         if(op == "G") : return Globally
         elif(op == "F") : return Finally
@@ -198,6 +228,7 @@ def readFormule(s : Text) -> LTLFormula:
     binaryOrder = [ "U", "R", "&", "|", ">"]
     maxOp = -1
     maxOpIndexB = -1
+    firstUnaryIndex = -1
 
     parentheseDeepness = 0
     hasParenthese = False
@@ -217,32 +248,31 @@ def readFormule(s : Text) -> LTLFormula:
             if(idx >= maxOpIndexB):
                 maxOp = i
                 maxOpIndexB = idx
+        if(parentheseDeepness == 0 and s[i] in unary and firstUnaryIndex < 0):
+            firstUnaryIndex = i
 
-    if(maxOpIndexB < 0):
-        for i in range(len(s)):
-            if(s[i] in unary):
-                if(s[i] == "!"):
-                    return readFormule(s[i+1:]).neg()
-                else:
-                    return getOperatorFromString(s[i])(readFormule(s[i+1:]))
-        if(hasParenthese):
-            return readFormule(s[s.find('(')+1:s.rfind(')')])
-        else:
-            return Variable(s)
-    else :
+    if(maxOpIndexB >= 0):
         return getOperatorFromString(s[maxOp])(readFormule(s[:maxOp]), readFormule(s[maxOp+1:]))
+    if(firstUnaryIndex >= 0):
+        if(s[firstUnaryIndex] == "!"):
+            return readFormule(s[firstUnaryIndex+1:]).neg()
+        else:
+            return getOperatorFromString(s[firstUnaryIndex])(readFormule(s[firstUnaryIndex+1:]))
+    if(hasParenthese):
+        return readFormule(s[s.find('(')+1:s.rfind(')')])
+    else:
+        return Variable(s)
 
 
 
 
-formula = readFormule("(a&(b|c))")
+formula = readFormule("Fr&G(r>!d)")
+print(formula)
 fs = FormulaSet(formula)
 d = fs.fullExpansion()
 
 for a in d:
     print("\n" + str(a))
-
-
 
 
 

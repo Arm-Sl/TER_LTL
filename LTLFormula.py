@@ -27,6 +27,11 @@ class LTLFormula(ABC):
     def neg(self) -> 'LTLFormula':
         pass
 
+    @abstractmethod
+    def __eq__(self, other):
+        pass
+
+
 
 class FormulaSet:
     formulas : List[LTLFormula] = []
@@ -69,6 +74,13 @@ class FormulaSet:
                 self.formulas.append(components[0])
 
             self.readIndex += 1
+
+        i = 0
+        while(i < len(sets)):
+            if(sets[i].isPatentlyInconsistent()):
+                sets.pop(i)
+                i+= 1
+            i+=1
         return sets
 
 
@@ -77,4 +89,16 @@ class FormulaSet:
         for formula in self.formulas:
             strr += "\t" + str(formula) + "\n"
         return strr
+
+    def isPatentlyInconsistent(self) -> bool:
+
+        for i in range(len(self.formulas)):
+            for j in range(len(self.formulas)):
+                if(i == j):
+                    continue
+                if(self.formulas[i] == deepcopy(self.formulas[j]).neg()):
+                    return True
+
+        return False
+
 
