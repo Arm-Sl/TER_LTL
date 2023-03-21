@@ -33,13 +33,14 @@ class LTLFormula(ABC):
 
 
 
-class FormulaSet:
-    formulas : List[LTLFormula] = []
-    readIndex : int = 0
 
-    def __init__(self, formula : LTLFormula = None):
-        if(formula is not None):
-            self.formulas.append(formula)
+class FormulaSet:
+
+    def __init__(self, *formula : LTLFormula):
+        self.readIndex : int = 0
+        self.formulas : List[LTLFormula] = []
+        for f in formula:
+            self.formulas.append(f)
 
 
     def __deepcopy__(self, memodict):
@@ -50,6 +51,7 @@ class FormulaSet:
 
     def fullExpansion(self) -> List['FormulaSet']:
         sets : List['FormulaSet'] = [self]
+
         while (self.readIndex < len(self.formulas)):
             if(self.formulas[self.readIndex].getType() == OperatorType.SUCCESSOR or self.formulas[self.readIndex ].getType() == OperatorType.VARIABLE):
                 self.readIndex +=1

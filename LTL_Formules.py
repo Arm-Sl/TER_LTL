@@ -5,8 +5,6 @@ from typing import Text, ClassVar, Any
 
 
 class And(LTLFormula):
-    comp1 : LTLFormula
-    comp2 : LTLFormula
 
     def __init__(self, comp1 : LTLFormula, comp2 : LTLFormula):
         self.comp1 = comp1
@@ -27,9 +25,8 @@ class And(LTLFormula):
     def __eq__(self, other : Any) -> bool:
         return isinstance(other, And) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
 
+
 class Or(LTLFormula):
-    comp1 : LTLFormula
-    comp2 : LTLFormula
 
     def __init__(self, comp1 : LTLFormula, comp2 : LTLFormula):
         self.comp1 = comp1
@@ -51,8 +48,6 @@ class Or(LTLFormula):
         return isinstance(other, Or) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
 
 class Implies(LTLFormula):
-    comp1 : LTLFormula
-    comp2 : LTLFormula
 
     def __init__(self, comp1 : LTLFormula, comp2 : LTLFormula):
         self.comp1 = comp1
@@ -75,7 +70,6 @@ class Implies(LTLFormula):
         return isinstance(other, Implies) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
 
 class Next(LTLFormula):
-    comp1 : LTLFormula
 
     def __init__(self, comp1 : LTLFormula):
         self.comp1 = comp1
@@ -96,7 +90,6 @@ class Next(LTLFormula):
         return isinstance(other, Next) and (self.comp1 == other.comp1)
 
 class Globally(LTLFormula):
-    comp1 : LTLFormula
 
     def __init__(self, comp1 : LTLFormula):
         self.comp1 = comp1
@@ -117,7 +110,6 @@ class Globally(LTLFormula):
         return isinstance(other, Globally) and (self.comp1 == other.comp1)
 
 class Finally(LTLFormula):
-    comp1 : LTLFormula
 
     def __init__(self, comp1 : LTLFormula):
         self.comp1 = comp1
@@ -138,8 +130,6 @@ class Finally(LTLFormula):
         return isinstance(other, Finally) and (self.comp1 == other.comp1)
 
 class Until(LTLFormula):
-    comp1 : LTLFormula
-    comp2 : LTLFormula
 
     def __init__(self, comp1 : LTLFormula, comp2 : LTLFormula):
         self.comp1 = comp1
@@ -162,8 +152,6 @@ class Until(LTLFormula):
         return isinstance(other, Until) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
 
 class Release(LTLFormula):
-    comp1 : LTLFormula
-    comp2 : LTLFormula
 
     def __init__(self, comp1 : LTLFormula, comp2 : LTLFormula):
         self.comp1 = comp1
@@ -186,12 +174,11 @@ class Release(LTLFormula):
         return isinstance(other, Release) and (self.comp1 == other.comp1 and self.comp2 == other.comp2)
 
 class Variable(LTLFormula):
-    _neg:bool
-    name:str
+
 
     def __init__(self, name):
         self.name = name
-        self._neg = False
+        self.isNeg = False
 
     def getType(self) -> OperatorType:
         return OperatorType.VARIABLE
@@ -201,19 +188,18 @@ class Variable(LTLFormula):
 
     def neg(self) -> LTLFormula:
         cpy = Variable(self.name)
-        cpy._neg = not self._neg
+        cpy.isNeg = not self.isNeg
         return cpy
 
     def __str__(self):
-        return ("!" if self._neg else "") + self.name
+        return ("!" if self.isNeg else "") + self.name
 
     def __eq__(self, other : Any) -> bool:
-        return isinstance(other, Variable) and (self.name == other.name and self._neg == other._neg)
+        return isinstance(other, Variable) and (self.name == other.name and self.isNeg == other.isNeg)
 
 
-def readFormule(s : Text) -> LTLFormula:
+def readFormule(s : Text, litterals : List[Variable]) -> LTLFormula:
 
-    print(s)
     def getOperatorFromString(op : Text) -> ClassVar[LTLFormula]:
         if(op == "G") : return Globally
         elif(op == "F") : return Finally
@@ -252,27 +238,22 @@ def readFormule(s : Text) -> LTLFormula:
             firstUnaryIndex = i
 
     if(maxOpIndexB >= 0):
-        return getOperatorFromString(s[maxOp])(readFormule(s[:maxOp]), readFormule(s[maxOp+1:]))
+        return getOperatorFromString(s[maxOp])(readFormule(s[:maxOp], litterals), readFormule(s[maxOp+1:], litterals))
     if(firstUnaryIndex >= 0):
         if(s[firstUnaryIndex] == "!"):
-            return readFormule(s[firstUnaryIndex+1:]).neg()
+            return readFormule(s[firstUnaryIndex+1:], litterals).neg()
         else:
-            return getOperatorFromString(s[firstUnaryIndex])(readFormule(s[firstUnaryIndex+1:]))
+            return getOperatorFromString(s[firstUnaryIndex])(readFormule(s[firstUnaryIndex+1:], litterals))
     if(hasParenthese):
-        return readFormule(s[s.find('(')+1:s.rfind(')')])
+        return readFormule(s[s.find('(')+1:s.rfind(')')], litterals)
     else:
-        return Variable(s)
+        v = Variable(s)
+        if(v not in litterals):
+            litterals.append(v)
+        return v
 
 
 
-
-formula = readFormule("Fr&G(r>!d)")
-print(formula)
-fs = FormulaSet(formula)
-d = fs.fullExpansion()
-
-for a in d:
-    print("\n" + str(a))
 
 
 
