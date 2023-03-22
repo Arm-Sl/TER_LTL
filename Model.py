@@ -7,7 +7,7 @@ __Creationdate__ = '21/03/2023'
 from typing import Dict, Text, List, Optional
 from enum import Enum
 from copy import deepcopy
-from  LTLFormula import LTLFormula
+from  LTLFormula import LTLFormula, OperatorType
 from  LTL_Formules import Variable
 from FormulaSet import FormulaSet
 
@@ -113,7 +113,7 @@ class Tableau:
     #TODO keep track of previous TableauStates / PreStates for edge creation
 
 
-    def ExpRule(self):
+    def expRule(self):
 
         for preState in self.currentPreStates:
             fullExp = preState.formulas.fullExpansion()
@@ -132,12 +132,43 @@ class Tableau:
                     if(s2 == newState):
                         preState.children.append(s2)
                         stateAlreadyPresent = True
-                if(not stateAlreadyPresent):
+                        break
+
+                #don't add offspring State if model state has no successors
+                if(not stateAlreadyPresent and len(self.model.transitions[preState.state]) > 0):
                     preState.children.append(newState)
                     self.states.append(newState)
                     self.currentStates.append(newState)
+        self.currentPreStates.clear()
 
-    def NextRule(self):
-        pass
+
+    def nextRule(self):
+        for state in self.currentStates:
+            for s in self.model.transitions[state.state] :
+
+                #calculate scomp
+                scomp : List[LTLFormula] = list()
+
+                for formula in state.formulas.formulas:
+                    if(formula.getType() == OperatorType.SUCCESSOR):
+                        scomp.extend(formula.getComponents())
+
+                formulaSet = FormulaSet(*scomp, *self.getTrueLitteralsInFormula(s))
+                newPreState = TableauState(s,formulaSet, state.interpretation)
+
+                #check if state is already present
+                preStateAlreadyPresent : bool = False
+                for s2 in self.states:
+                    if(s2 == newPreState):
+                        state.children.append(s2)
+                        preStateAlreadyPresent = True
+                        break
+                if(not preStateAlreadyPresent):
+                    state.children.append(newPreState)
+                    self.preStates.append(newPreState)
+                    self.currentPreStates.append(newPreState)
+
+        self.currentStates.clear()
+
 
     #TODO next rule
