@@ -32,16 +32,18 @@ class FormulaSet:
                 variables.append(cast(Variable, formula))
         return variables
 
+
     def fullExpansion(self) -> List['FormulaSet']:
         sets : List['FormulaSet'] = [self]
 
-        while (self.readIndex < len(self.formulas)):
-            if(self.formulas[self.readIndex].getType() == OperatorType.SUCCESSOR or self.formulas[self.readIndex ].getType() == OperatorType.VARIABLE):
-                self.readIndex +=1
-                continue
 
-            if(self.formulas[self.readIndex ].getType() == OperatorType.CONJONCTIVE):
-                self.formulas.extend(self.formulas[self.readIndex].getComponents())
+        while (self.readIndex < len(self.formulas)):
+
+            if(self.formulas[self.readIndex].getType() == OperatorType.CONJONCTIVE):
+                comps = self.formulas[self.readIndex].getComponents()
+                for i in range(len(comps)):
+                    if(not comps[i] in self.formulas):
+                        self.formulas.append(comps[i])
 
             if(self.formulas[self.readIndex ].getType() == OperatorType.DISJONCTIVE):
                 components = self.formulas[self.readIndex].getComponents()
@@ -50,13 +52,22 @@ class FormulaSet:
                     self.readIndex += 1
                     continue
 
+                # componentAlreadyPresent = False
+                # for j in range(0, len(components)):
+                #     if(components[j] in self.formulas):
+                #         componentAlreadyPresent = True
+                # if(componentAlreadyPresent):
+                #     self.readIndex += 1
+                #     continue
+
                 for j in range(1, len(components)):
                     newFormula = deepcopy(self)
-                    newFormula.formulas.append(components[j])
+                    if(not components[j] in newFormula.formulas):
+                        newFormula.formulas.append(components[j])
                     newFormula.readIndex += 1
                     sets.extend(newFormula.fullExpansion())
-
-                self.formulas.append(components[0])
+                if(not components[0] in self.formulas):
+                    self.formulas.append(components[0])
 
             self.readIndex += 1
 
@@ -64,8 +75,8 @@ class FormulaSet:
         while(i < len(sets)):
             if(sets[i].isPatentlyInconsistent()):
                 sets.pop(i)
+            else:
                 i+= 1
-            i+=1
         return sets
 
 
@@ -79,7 +90,15 @@ class FormulaSet:
     def __eq__(self, other):
         if(not isinstance(other, FormulaSet)):
             return False
-        return self.formulas == other.formulas
+
+        if(len(self.formulas) != len(other.formulas)):
+            return False
+
+        for a in self.formulas:
+            if(not a in other.formulas):
+                return False
+
+        return True
 
     def isPatentlyInconsistent(self) -> bool:
 

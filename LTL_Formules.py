@@ -176,9 +176,9 @@ class Release(LTLFormula):
 class Variable(LTLFormula):
 
 
-    def __init__(self, name):
+    def __init__(self, name, isNeg = False):
         self.name = name
-        self.isNeg = False
+        self.isNeg = isNeg
 
     def getType(self) -> OperatorType:
         return OperatorType.VARIABLE
@@ -250,6 +250,7 @@ def readFormule(s : Text, litterals : List[Variable]) -> LTLFormula:
         v = Variable(s)
         if(v not in litterals):
             litterals.append(v)
+            litterals.append(Variable(s, True))
         return v
 
 
