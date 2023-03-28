@@ -246,9 +246,43 @@ class Tableau:
             for child in preState.children:
                 fromPreStateTrans.append((preState.id, child.id))
 
+        widths = list()
+        alreadyExplored = set()
+        def getWidths(root : TableauState, depth = 0):
+            alreadyExplored.add(root.id)
+            if(len(widths) <= depth):
+                widths.append(1)
+            else:
+                widths[depth] += 1
+            for e in root.children:
+                if(e.id > root.id and not e.id in alreadyExplored):
+                    getWidths(e, depth+1)
 
+        getWidths(self.rootState)
+        maxWidth = max(widths)
 
-        pos = nx.shell_layout(g)  # positions for all nodes
+        pos : Dict[int, Tuple[int,int]] = dict()
+
+        alreadyExplored.clear()
+        def getPos(root : TableauState, depth = 0, currentPos = 0):
+            pos[root.id] = (currentPos, -depth)
+
+            validChildren : List[TableauState] = list()
+
+            for e in root.children:
+                if(e.id > root.id and not e.id in alreadyExplored):
+                    validChildren.append(e)
+                    alreadyExplored.add(e.id)
+
+            step = maxWidth/widths[depth]
+            childPos =  currentPos - (step * (len(validChildren) - 1))/2
+            for e in validChildren:
+                getPos(e, depth+1, childPos)
+                childPos += step
+        getPos(self.rootState)
+        #pos = nx.circular_layout(g)  # positions for all nodes
+        #pos[14 ] = (10,10)
+        print(pos)
         nx.draw_networkx_nodes(g, pos, statesIds, node_shape="o")
         nx.draw_networkx_nodes(g, pos, preStatesIds, node_shape="s", node_color='#1fb460')
         nx.draw_networkx_edges(g, pos, edgelist=fromStateTrans, style="-", arrows=True, arrowstyle='-|>')
