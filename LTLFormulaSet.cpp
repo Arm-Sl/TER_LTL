@@ -62,8 +62,6 @@ std::vector<LTLFormulaSet> LTLFormulaSet::fullExpansion() const
 	{
 		std::vector<std::unique_ptr<LTLFormula>> comps;
 
-		std::cout <<  fullExpansion[0].formulas[fullExpansion[0].readIndex]->operator std::string() << std::endl;
-
 		switch (fullExpansion[0].formulas[fullExpansion[0].readIndex]->getOperatorType())
 		{
 		case OperatorType::CONJONCTIVE :
