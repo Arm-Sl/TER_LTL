@@ -52,6 +52,7 @@ struct Transition
 class Model
 {
 public:
+
 	Model();
 	~Model();	
 
