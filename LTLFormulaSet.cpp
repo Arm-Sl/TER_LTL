@@ -10,6 +10,11 @@ LTLFormulaSet::LTLFormulaSet()
 {
 }
 
+LTLFormulaSet::~LTLFormulaSet()
+{
+}
+
+
 
 LTLFormulaSet::LTLFormulaSet(const LTLFormulaSet & fs)
 {
@@ -42,15 +47,6 @@ LTLFormulaSet & LTLFormulaSet::operator=(LTLFormulaSet && fs)
 	return *this;
 }
 
-LTLFormulaSet::operator std::string() const
-{
-	std::string str;
-
-	for (const auto& f : this->formulas)
-		str += "\t" + f->operator std::string() + "\n";
-
-	return str;
-}
 
 std::vector<LTLFormulaSet> LTLFormulaSet::fullExpansion() const
 {
@@ -125,7 +121,27 @@ bool LTLFormulaSet::isPatentlyInconsistent() const
 }
 
 
-
-LTLFormulaSet::~LTLFormulaSet()
+LTLFormulaSet::operator std::string() const
 {
+	std::string str;
+
+	for (const auto& f : this->formulas)
+		str += "\t" + f->operator std::string() + "\n";
+
+	return str;
 }
+
+
+bool LTLFormulaSet::operator==(const LTLFormulaSet& other) const
+{
+	if (this->formulas.size() != other.formulas.size())
+		return false;
+
+	for (int i = 0; i < this->formulas.size(); i++)
+	{
+		if (std::find(other.formulas.begin(), other.formulas.end(), this->formulas[i]) == other.formulas.end())
+			return false;
+	}
+	return true;
+}
+

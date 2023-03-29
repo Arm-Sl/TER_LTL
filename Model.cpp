@@ -16,7 +16,7 @@ Interpretation InterpretationFunction::get(int state, char name)
 	return Interpretation::UNKNOWN;
 }
 
-Interpretation InterpretationFunction::set(int state, char name, Interpretation i)
+void InterpretationFunction::set(int state, char name, Interpretation i)
 {
 	this->interpretations[state].insert_or_assign(name, i);
 }
@@ -50,6 +50,8 @@ InterpretationFunction::operator std::string() const
 			}
 		}
 	}
+
+	return str;
 }
 
 InterpretationFunction::~InterpretationFunction()
@@ -58,7 +60,7 @@ InterpretationFunction::~InterpretationFunction()
 #pragma endregion
 
 
-Model::Model()
+Model::Model(int stateCount) : interpretationFunction(stateCount)
 {
 }
 

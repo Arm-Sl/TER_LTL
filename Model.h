@@ -20,7 +20,7 @@ public:
 	///<summary> Get the value of a variable at a given state</summary>
 	Interpretation get(int state, char name);
 
-	Interpretation set(int state, char name, Interpretation i);
+	void set(int state, char name, Interpretation i);
 
 	bool operator==(const InterpretationFunction& other) const;
 
@@ -53,7 +53,7 @@ class Model
 {
 public:
 
-	Model();
+	Model(int stateCount);
 	~Model();	
 
 private:

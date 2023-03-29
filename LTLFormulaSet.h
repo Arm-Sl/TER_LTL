@@ -9,18 +9,19 @@ class LTLFormulaSet
 {
 public:
 	LTLFormulaSet();
+	~LTLFormulaSet();
+
 	LTLFormulaSet(const LTLFormulaSet& fs);
 	LTLFormulaSet(LTLFormulaSet&& fs);
 	LTLFormulaSet(std::unique_ptr<LTLFormula>&& formula);
 	
 	LTLFormulaSet& operator=(LTLFormulaSet&& fs);
-	operator std::string() const;
-	std::vector<LTLFormulaSet> fullExpansion() const;
 
+	std::vector<LTLFormulaSet> fullExpansion() const;
 	bool isPatentlyInconsistent() const;
 
-	~LTLFormulaSet();
-
+	operator std::string() const;
+	bool operator==(const LTLFormulaSet& other) const;
 
 private:
 
