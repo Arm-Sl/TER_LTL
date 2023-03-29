@@ -83,8 +83,30 @@ class Model:
 
 
 
-class TableauState:
+class PreTableauState:
     TableauStatePreStateCount = 0
+
+    def __init__(self, state : int, formulas : FormulaSet, interpretation : InterpretationFunction):
+        self.children : List['PreTableauState'] = list()
+        self.parents : List['PreTableauState'] = list()
+        self.state : int = state
+        self.formulas : FormulaSet = formulas
+        self.interpretation : InterpretationFunction = interpretation
+        self.id = -1
+
+
+    def setId(self):
+        self.id = PreTableauState.TableauStatePreStateCount
+        PreTableauState.TableauStatePreStateCount += 1
+
+    def __eq__(self, other) -> bool:
+        if(not isinstance(other, PreTableauState)):
+            return False
+        return self.state == other.state and self.formulas == other.formulas and self.interpretation == other.interpretation
+
+
+class TableauState:
+    TableauStateCount = 0
 
     def __init__(self, state : int, formulas : FormulaSet, interpretation : InterpretationFunction):
         self.children : List['TableauState'] = list()
@@ -95,27 +117,38 @@ class TableauState:
 
 
     def setId(self):
-        self.id = TableauState.TableauStatePreStateCount
-        TableauState.TableauStatePreStateCount += 1
+        self.id = PreTableauState.TableauStatePreStateCount
+        PreTableauState.TableauStatePreStateCount += 1
 
     def __eq__(self, other) -> bool:
-        if(not isinstance(other, TableauState)):
+        if(not isinstance(other, PreTableauState)):
             return False
         return self.state == other.state and self.formulas == other.formulas and self.interpretation == other.interpretation
 
-class Tableau:
 
+class Tableau:
     def __init__(self, model : Model, formula : LTLFormula, litterals : List[Variable]):
         self.model : Model = model
-        self.rootState : Optional[TableauState] = None
+        self.rootState : Optional[PreTableauState] = None
         self.formula : LTLFormula = formula
         self.litterals : List[Variable] = litterals
 
-        self.currentStates : List[TableauState] = list()
-        self.currentPreStates : List[TableauState] = list()
+        self.states : List[PreTableauState] = list()
 
-        self.preStates : List[TableauState] = list()
-        self.states : List[TableauState] = list()
+
+class PreTableau:
+
+    def __init__(self, model : Model, formula : LTLFormula, litterals : List[Variable]):
+        self.model : Model = model
+        self.rootState : Optional[PreTableauState] = None
+        self.formula : LTLFormula = formula
+        self.litterals : List[Variable] = litterals
+
+        self.currentStates : List[PreTableauState] = list()
+        self.currentPreStates : List[PreTableauState] = list()
+
+        self.preStates : List[PreTableauState] = list()
+        self.states : List[PreTableauState] = list()
 
     def getTrueLitteralsInFormula(self, state : int, interpretationFunction : InterpretationFunction = None) -> List[Variable]:
         res : List[Variable] = list()
@@ -131,7 +164,7 @@ class Tableau:
 
     def createInitialState(self):
         fSet = FormulaSet(deepcopy(self.formula), *self.getTrueLitteralsInFormula(0))
-        self.rootState = TableauState(0, fSet, deepcopy(self.model.interpretationFunction))
+        self.rootState = PreTableauState(0, fSet, deepcopy(self.model.interpretationFunction))
         self.rootState.setId()
         self.currentPreStates.append(self.rootState)
         self.preStates.append(self.rootState)
@@ -150,7 +183,7 @@ class Tableau:
                 for litteral in formulaSet.getLitterals():
                     if(f.get(preState.state, litteral.name) == Interpretation.UNKNOWN):
                         f.set(preState.state, litteral.name, Interpretation.FALSE if litteral.isNeg else Interpretation.TRUE)
-                newState = TableauState(preState.state,formulaSet, f)
+                newState = PreTableauState(preState.state, formulaSet, f)
 
                 #check if state is already present
                 stateAlreadyPresent : bool = False
@@ -181,7 +214,7 @@ class Tableau:
                         scomp.extend(formula.getComponents())
 
                 formulaSet = FormulaSet(*scomp, *self.getTrueLitteralsInFormula(s, state.interpretation))
-                newPreState = TableauState(s,formulaSet, state.interpretation)
+                newPreState = PreTableauState(s, formulaSet, state.interpretation)
 
                 #check if state is already present
                 preStateAlreadyPresent : bool = False
@@ -205,8 +238,17 @@ class Tableau:
             self.nextRule()
 
 
-    def preStateElim(self):
-        pass
+    def toTableau(self) -> Tableau:
+        tab : Tableau = Tableau(self.model, self.formula, self.litterals)
+
+
+        for state in self.states:
+            state : TableauState = TableauState(state.state, state.formulas, state.interpretation)
+
+            tab.states.append()
+
+        return tab
+
 
     def stateElim1(self):
         pass
@@ -248,7 +290,7 @@ class Tableau:
 
         widths = list()
         alreadyExplored = set()
-        def getWidths(root : TableauState, depth = 0):
+        def getWidths(root : PreTableauState, depth = 0):
             alreadyExplored.add(root.id)
             if(len(widths) <= depth):
                 widths.append(1)
@@ -264,10 +306,10 @@ class Tableau:
         pos : Dict[int, Tuple[int,int]] = dict()
 
         alreadyExplored.clear()
-        def getPos(root : TableauState, depth = 0, currentPos = 0):
+        def getPos(root : PreTableauState, depth = 0, currentPos = 0):
             pos[root.id] = (currentPos, -depth)
 
-            validChildren : List[TableauState] = list()
+            validChildren : List[PreTableauState] = list()
 
             for e in root.children:
                 if(e.id > root.id and not e.id in alreadyExplored):
@@ -280,13 +322,10 @@ class Tableau:
                 getPos(e, depth+1, childPos)
                 childPos += step
         getPos(self.rootState)
-        #pos = nx.circular_layout(g)  # positions for all nodes
-        #pos[14 ] = (10,10)
-        print(pos)
+
         nx.draw_networkx_nodes(g, pos, statesIds, node_shape="o")
         nx.draw_networkx_nodes(g, pos, preStatesIds, node_shape="s", node_color='#1fb460')
         nx.draw_networkx_edges(g, pos, edgelist=fromStateTrans, style="-", arrows=True, arrowstyle='-|>')
         nx.draw_networkx_edges(g, pos, edgelist=fromPreStateTrans, style="--", arrows=True, arrowstyle='-|>')
         nx.draw_networkx_labels(g, pos, labels, font_size=10, font_color="whitesmoke")
         plt.show()
-

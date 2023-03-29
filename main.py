@@ -10,7 +10,7 @@ __Creationdate__ = '21/03/2023'
 
 from copy import deepcopy
 from typing import List
-from Model import Model, InterpretationFunction, Interpretation, Tableau
+from Model import Model, InterpretationFunction, Interpretation, PreTableau
 from LTL_Formules import readFormule, LTLFormula, Variable
 from FormulaSet import FormulaSet
 
@@ -23,7 +23,7 @@ fct.add(0, d=Interpretation.TRUE, r=Interpretation.UNKNOWN)
 fct.add(1, d=Interpretation.UNKNOWN, r=Interpretation.UNKNOWN)
 
 model = Model(2, [[1],[0,1]], fct)
-tab = Tableau(model, deepcopy(formula), deepcopy(litterals))
+tab = PreTableau(model, deepcopy(formula), deepcopy(litterals))
 tab.createInitialState()
 tab.preTableauComputation()
 
