@@ -4,6 +4,7 @@
 #include<string>
 
 class LTLFormula;
+class VariableOp;
 
 class LTLFormulaSet
 {
@@ -17,11 +18,26 @@ public:
 	
 	LTLFormulaSet& operator=(LTLFormulaSet&& fs);
 
+	void addFormula(std::unique_ptr<LTLFormula>&& formula);
+	///<summary>Add null formulas and return a pointer to the first added element</summary>
+	std::unique_ptr<LTLFormula>* addFormulas(size_t size);
+	size_t size() { return this->formulas.size(); }
+
 	std::vector<LTLFormulaSet> fullExpansion() const;
 	bool isPatentlyInconsistent() const;
 
+	std::vector<VariableOp*> getLitterals() const;
+
 	operator std::string() const;
 	bool operator==(const LTLFormulaSet& other) const;
+
+	bool foundInFormula(const std::vector<std::unique_ptr<LTLFormula>>& vec, const std::unique_ptr<LTLFormula>& ptr) const;
+
+	std::vector<std::unique_ptr<LTLFormula>>::const_iterator begin() const;
+	std::vector<std::unique_ptr<LTLFormula>>::const_iterator end() const;
+
+	//std::vector<std::unique_ptr<LTLFormula>>::iterator begin();
+	//std::vector<std::unique_ptr<LTLFormula>>::iterator end();
 
 private:
 

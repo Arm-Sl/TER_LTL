@@ -1,5 +1,6 @@
 #pragma once
 #include<vector>
+#include<set>
 #include<memory>
 #include <sstream>
 
@@ -19,7 +20,7 @@ public:
 	~LTLFormula();
 
 	virtual OperatorType getOperatorType() const = 0;
-	virtual void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const = 0;
+	virtual std::vector<std::unique_ptr<LTLFormula>> getComponents() const = 0;
 	
 	///<summary> Return a copy of this <see cref="LTLFormula"/>, negated</summary>
 	virtual std::unique_ptr<LTLFormula> neg() const = 0;
@@ -28,7 +29,8 @@ public:
 	virtual operator std::string() const = 0;
 	virtual bool operator==(const LTLFormula& formula) const = 0;
 
-	static std::unique_ptr<LTLFormula> readFormule(std::string s);
+	///<summary> return a new LTL represented by the string s, and get all variable names</summary>
+	static std::unique_ptr<LTLFormula> readFormule(std::string s, std::set<char>& variableNames);
 	
 
 
@@ -48,7 +50,7 @@ public:
 	~NextOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::SUCCESSOR; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
@@ -71,7 +73,7 @@ public:
 	~GloballyOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::CONJONCTIVE; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
@@ -94,7 +96,7 @@ public:
 	~FinallyOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::DISJONCTIVE; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
@@ -121,7 +123,7 @@ public:
 	~UntilOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::DISJONCTIVE; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
@@ -146,7 +148,7 @@ public:
 	~ReleaseOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::CONJONCTIVE; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
@@ -171,7 +173,7 @@ public:
 	~AndOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::CONJONCTIVE; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
@@ -196,7 +198,7 @@ public:
 	~OrOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::DISJONCTIVE; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
@@ -221,7 +223,7 @@ public:
 	~ImpliesOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::DISJONCTIVE; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
@@ -244,15 +246,18 @@ public:
 	~VariableOp();
 
 	OperatorType getOperatorType() const override { return OperatorType::VARIABLE; }
-	void getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const override;
+	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
 
 	std::unique_ptr<LTLFormula> copy() const override;
+
+	char getName() const { return this->name; };
+	bool isNeg() const { return this->_isNeg; };
 
 	operator std::string() const override;
 	bool operator==(const LTLFormula& formula) const;
 
 private:
 	char name;
-	bool isNeg;
+	bool _isNeg;
 };

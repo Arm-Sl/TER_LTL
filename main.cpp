@@ -1,6 +1,8 @@
 #include <iostream>
 #include "LTLFormula.h"
 #include "LTLFormulaSet.h"
+#include "Model.h"
+#include "Tableau.h"
 
 class A
 {
@@ -16,12 +18,13 @@ private:
 int main(int argc, char *argv[])
 {
 	
-	auto s = LTLFormula::readFormule("(a&b)|c");
+	std::set<char> variableNames;
+	auto s = LTLFormula::readFormule("(a&b)|c", variableNames);
 	
 	std::cout << s->operator std::string() << std::endl;
 
 
-	LTLFormulaSet fs(LTLFormula::readFormule("Fr&G(r>!d)"));
+	LTLFormulaSet fs(LTLFormula::readFormule("Fr&G(r>!d)", variableNames));
 	auto fexp = fs.fullExpansion();
 
 
@@ -32,10 +35,57 @@ int main(int argc, char *argv[])
 
 	}
 
-	VariableOp a('a', false);
-	VariableOp b('a', true);
+	std::cout << "PRETABLEAU : " << sizeof(A) << std::endl;
+	Model model(2);
+	model.setSuccessors(0, { 1 });
+	model.setSuccessors(1, { 0, 1 });
+	model.setInt(0, 'd', Interpretation::TRUE);
+
+	Tableau tab(&model, LTLFormula::readFormule("Fr&G(r>!d)", variableNames));
+	tab.preTableauComputation();
+
+	std::cout << "PreTableau Computation finished" << std::endl;
+	std::cout << "State count : " << tab.states.size() << ", Prestate count : " << tab.preStates.size() << "    " << TableauState::lastID  << std::endl;
+
+
 	
-	std::cout << a.operator std::string() << "    " << b.neg()->operator std::string() << "   " << (a==*b.neg()) << std::endl;
+
+	//TableauState* s0 = tab.preStates[0].get();
+	//std::cout << "0 : " << s0->getChildren().size() << "     " << s0->id << std::endl;
+	//
+	//TableauState* s1 = s0->getChildren()[0];
+	//std::cout << "1 : " << s1->getChildren().size() << "     " << s1->id << std::endl;
+	//
+	//TableauState* s2 = s1->getChildren()[0];
+	//std::cout << "2 : " << s2->getChildren().size() << "     " << s2->id << std::endl;
+	//
+	//TableauState* s3 = s2->getChildren()[0];
+	//std::cout << "3 : " << s3->getChildren().size() << "     " << s3->id << std::endl;
+	//
+	//TableauState* s6 = s3->getChildren()[0];
+	//std::cout << "6 : " << s6->getChildren().size() << "     " << s6->id << std::endl;
+	//	
+	//TableauState* s7 = s3->getChildren()[1];
+	//std::cout << "7 : " << s7->getChildren().size() << "     " << s7->id <<"     " << s7->getChildren()[1]->id << std::endl;
+	//
+	//TableauState* s12 = s6->getChildren()[0];
+	//std::cout << "12 : " << s12->getChildren().size() << "     " << s12->id << std::endl;
+	//std::cout << "12C : " << s12->getChildren()[0]->id << std::endl;
+	//
+	//
+	//TableauState* s4 = s2->getChildren()[1];
+	//std::cout << "4 : " << s4->getChildren().size() << "     " << s4->id << std::endl;
+	//
+	//TableauState* s8 = s4->getChildren()[0];
+	//std::cout << "8 : " << s8->getChildren().size() << "     " << s8->id  << "     " << s8->getChildren()[0]->id << std::endl;
+	//
+	//TableauState* s9 = s4->getChildren()[1];
+	//std::cout << "9 : " << s9->getChildren().size() << "     " << s9->id  << "     " << s9->getChildren()[0]->id << "     " << s9->getChildren()[1]->id  << "     " << s9->getChildren()[2]->id << std::endl;
+	//
+	//TableauState* s16 = s9->getChildren()[1];
+	//
+	//std::cout << s4->getFormulas().operator std::string() << std::endl;
+	//std::cout << s16->getFormulas().operator std::string() << std::endl;
 
 	std::cout << "Size : " << sizeof(A) << std::endl;
 	A ab;

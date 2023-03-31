@@ -18,7 +18,8 @@ Interpretation InterpretationFunction::get(int state, char name)
 
 void InterpretationFunction::set(int state, char name, Interpretation i)
 {
-	this->interpretations[state].insert_or_assign(name, i);
+	if(i != Interpretation::UNKNOWN)
+		this->interpretations[state].insert_or_assign(name, i);
 }
 
 bool InterpretationFunction::operator==(const InterpretationFunction & other) const
@@ -60,7 +61,26 @@ InterpretationFunction::~InterpretationFunction()
 #pragma endregion
 
 
-Model::Model(int stateCount) : interpretationFunction(stateCount)
+#pragma region Transitions
+
+
+
+Transitions::Transitions(int stateCount) : transitions(stateCount)
+{
+}
+
+
+Transitions::~Transitions()
+{
+}
+
+#pragma endregion
+
+
+
+Model::Model(int stateCount) : 
+	interpretationFunction(stateCount),
+	transitions(stateCount)
 {
 }
 

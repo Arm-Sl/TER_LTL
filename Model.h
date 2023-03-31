@@ -15,12 +15,15 @@ class InterpretationFunction
 {
 public:
 	InterpretationFunction(int stateCount);
+	InterpretationFunction(InterpretationFunction&& interpretation) = default;
+	InterpretationFunction(const InterpretationFunction& interpretation) = default;
 	~InterpretationFunction();
 
 	///<summary> Get the value of a variable at a given state</summary>
 	Interpretation get(int state, char name);
 
 	void set(int state, char name, Interpretation i);
+	const std::map<char, Interpretation>& getInterpretations(int state) const{ return this->interpretations[state]; }
 
 	bool operator==(const InterpretationFunction& other) const;
 
@@ -32,21 +35,15 @@ private:
 
 
 
-struct Transition
+class Transitions
 {
-	Transition(int f, int s)
-	{
-		this->f = f;
-		this->s = s;
-	}
-
-	int f;
-	int s;
-
-	bool operator==(const Transition& other)
-	{
-		return this->f == other.f && this->s == other.s;
-	}
+public:
+	Transitions(int stateCount);
+	~Transitions();
+	const std::vector<int>& getSuccessors(int state) const { return this->transitions[state]; };
+	void setSuccessors(int state, const std::vector<int>& succs) { this->transitions[state] = succs; };
+private:
+	std::vector<std::vector<int>> transitions;
 };
 
 class Model
@@ -55,10 +52,17 @@ public:
 
 	Model(int stateCount);
 	~Model();	
+	const InterpretationFunction& getInterpretationFunction() const { return this->interpretationFunction; };
+	const std::vector<int>& getSuccessors(int state) const { return this->transitions.getSuccessors(state); };
+
+	//TODO just for test
+	void setSuccessors(int state, const std::vector<int>& succs) { this->transitions.setSuccessors(state, succs); };
+	void setInt(int state, char name, Interpretation inter) { this->interpretationFunction.set(state, name, inter); };
+
 
 private:
 	int stateCount;
-	std::vector<Transition> transitions;
+	Transitions transitions;
 	InterpretationFunction interpretationFunction;
 
 };

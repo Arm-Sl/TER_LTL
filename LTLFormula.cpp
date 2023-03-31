@@ -13,7 +13,7 @@ LTLFormula::~LTLFormula()
 }
 
 
-std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s)
+std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s, std::set<char>& variableNames)
 {
 	int parentheseDeepness = 0;
 
@@ -90,15 +90,15 @@ std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s)
 		switch (s[maxBinaryOpIndex])
 		{
 		case UntilOp::SYMBOL:
-			return std::make_unique<UntilOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
+			return std::make_unique<UntilOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
 		case ReleaseOp::SYMBOL:
-			return std::make_unique<ReleaseOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
+			return std::make_unique<ReleaseOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
 		case AndOp::SYMBOL:
-			return std::make_unique<AndOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
+			return std::make_unique<AndOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
 		case OrOp::SYMBOL:
-			return std::make_unique<OrOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
+			return std::make_unique<OrOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
 		case ImpliesOp::SYMBOL:
-			return std::make_unique<ImpliesOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
+			return std::make_unique<ImpliesOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
 		default:
 			break;
 		}
@@ -108,19 +108,19 @@ std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s)
 		switch (s[firstUnaryIndex])
 		{
 		case '!':
-			return readFormule(s.substr(firstUnaryIndex + 1))->neg();
+			return readFormule(s.substr(firstUnaryIndex + 1), variableNames)->neg();
 		case NextOp::SYMBOL:
-			return std::make_unique<NextOp>(readFormule(s.substr(firstUnaryIndex + 1)));
+			return std::make_unique<NextOp>(readFormule(s.substr(firstUnaryIndex + 1), variableNames));
 		case GloballyOp::SYMBOL:
-			return std::make_unique<GloballyOp>(readFormule(s.substr(firstUnaryIndex + 1)));
+			return std::make_unique<GloballyOp>(readFormule(s.substr(firstUnaryIndex + 1), variableNames));
 		case FinallyOp::SYMBOL:
-			return std::make_unique<FinallyOp>(readFormule(s.substr(firstUnaryIndex + 1)));
+			return std::make_unique<FinallyOp>(readFormule(s.substr(firstUnaryIndex + 1), variableNames));
 		default:
 			break;
 		}
 	}
 	else if (firstOpenParenthesIndex > -1)
-		return readFormule(s.substr(firstOpenParenthesIndex + 1, lastCloseParenthesIndex - firstOpenParenthesIndex - 1));
+		return readFormule(s.substr(firstOpenParenthesIndex + 1, lastCloseParenthesIndex - firstOpenParenthesIndex - 1), variableNames);
 	else
 	{
 		char name = 0;
@@ -132,6 +132,7 @@ std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s)
 				break;
 			}
 		}
+		variableNames.emplace(name);
 		return std::make_unique<VariableOp>(name);
 
 	}
@@ -161,9 +162,11 @@ NextOp::~NextOp()
 }
 
 
-void NextOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
+std::vector<std::unique_ptr<LTLFormula>> NextOp::getComponents() const
 {
+	std::vector<std::unique_ptr<LTLFormula>> comps;
 	comps.push_back(this->operand->copy());
+	return comps;
 }
 
 std::unique_ptr<LTLFormula> NextOp::neg() const
@@ -208,10 +211,14 @@ GloballyOp::~GloballyOp()
 }
 
 
-void GloballyOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
+std::vector<std::unique_ptr<LTLFormula>> GloballyOp::getComponents() const
 {
+	std::vector<std::unique_ptr<LTLFormula>> comps;
+
 	 comps.push_back(this->operand->copy());
 	 comps.push_back(std::make_unique<NextOp>(std::make_unique<GloballyOp>(this->operand->copy())));
+
+	 return comps;
 }
 
 std::unique_ptr<LTLFormula> GloballyOp::neg() const
@@ -256,10 +263,14 @@ FinallyOp::~FinallyOp()
 }
 
 
-void FinallyOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
+std::vector<std::unique_ptr<LTLFormula>> FinallyOp::getComponents() const
 {
+	std::vector<std::unique_ptr<LTLFormula>> comps;
+
 	comps.push_back(this->operand->copy());
 	comps.push_back(std::make_unique<NextOp>(std::make_unique<FinallyOp>(this->operand->copy())));
+
+	return comps;
 }
 
 std::unique_ptr<LTLFormula> FinallyOp::neg() const
@@ -304,10 +315,14 @@ UntilOp::~UntilOp()
 {
 }
 
-void UntilOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
+std::vector<std::unique_ptr<LTLFormula>> UntilOp::getComponents() const
 {
+	std::vector<std::unique_ptr<LTLFormula>> comps;
+
 	comps.push_back(this->leftOperand->copy());
 	comps.push_back(std::make_unique<AndOp>(this->rightOperand->copy(), std::make_unique<NextOp>(std::make_unique<UntilOp>(this->leftOperand->copy(), this->rightOperand->copy()))));
+	
+	return comps;
 }
 
 std::unique_ptr<LTLFormula> UntilOp::neg() const
@@ -350,10 +365,14 @@ ReleaseOp::~ReleaseOp()
 {
 }
 
-void ReleaseOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
+std::vector<std::unique_ptr<LTLFormula>> ReleaseOp::getComponents() const
 {
+	std::vector<std::unique_ptr<LTLFormula>> comps;
+
 	comps.push_back(std::make_unique<OrOp>(this->leftOperand->copy(), std::make_unique<NextOp>(std::make_unique<ReleaseOp>(this->leftOperand->copy(), this->rightOperand->copy()))));
 	comps.push_back(this->rightOperand->copy());
+	
+	return comps;
 }
 
 std::unique_ptr<LTLFormula> ReleaseOp::neg() const
@@ -401,10 +420,14 @@ AndOp::~AndOp()
 }
 
 
-void AndOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
-{	
+std::vector<std::unique_ptr<LTLFormula>> AndOp::getComponents() const
+{
+	std::vector<std::unique_ptr<LTLFormula>> comps;
+
 	comps.push_back(this->leftOperand->copy());
 	comps.push_back(this->rightOperand->copy());
+
+	return comps;
 }
 
 std::unique_ptr<LTLFormula> AndOp::neg() const
@@ -448,10 +471,14 @@ OrOp::~OrOp()
 {
 }
 
-void OrOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
+std::vector<std::unique_ptr<LTLFormula>> OrOp::getComponents() const
 {
+	std::vector<std::unique_ptr<LTLFormula>> comps;
+
 	comps.push_back(this->leftOperand->copy());
 	comps.push_back(this->rightOperand->copy());
+
+	return comps;
 }
 
 std::unique_ptr<LTLFormula> OrOp::neg() const
@@ -495,10 +522,14 @@ ImpliesOp::~ImpliesOp()
 {
 }
 
-void ImpliesOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
+std::vector<std::unique_ptr<LTLFormula>> ImpliesOp::getComponents() const
 {
+	std::vector<std::unique_ptr<LTLFormula>> comps;
+
 	comps.push_back(this->leftOperand->neg());
 	comps.push_back(this->rightOperand->copy());
+
+	return comps;
 }
 
 std::unique_ptr<LTLFormula> ImpliesOp::neg() const
@@ -534,7 +565,7 @@ bool ImpliesOp::operator==(const LTLFormula & formula) const
 
 #pragma region VariableOp
 
-VariableOp::VariableOp(char name, bool neg) : name(name), isNeg(neg)
+VariableOp::VariableOp(char name, bool neg) : name(name), _isNeg(neg)
 {
 }
 
@@ -542,23 +573,24 @@ VariableOp::~VariableOp()
 {
 }
 
-void VariableOp::getComponents(std::vector<std::unique_ptr<LTLFormula>>& comps) const
+std::vector<std::unique_ptr<LTLFormula>> VariableOp::getComponents() const
 {
+	return std::vector<std::unique_ptr<LTLFormula>>();
 }
 
 std::unique_ptr<LTLFormula> VariableOp::neg() const
 {
-	return std::make_unique<VariableOp>(this->name, !this->isNeg);
+	return std::make_unique<VariableOp>(this->name, !this->_isNeg);
 }
 
 std::unique_ptr<LTLFormula> VariableOp::copy() const
 {
-	return std::make_unique<VariableOp>(this->name, this->isNeg);
+	return std::make_unique<VariableOp>(this->name, this->_isNeg);
 }
 
 VariableOp::operator std::string() const
 {
-	if (this->isNeg)
+	if (this->_isNeg)
 		return std::string(1, '!') + this->name;
 	return std::string(1, this->name);
 }
@@ -569,7 +601,7 @@ bool VariableOp::operator==(const LTLFormula & formula) const
 {
 	if (const VariableOp* other = dynamic_cast<const VariableOp*>(&formula))
 	{
-		return this->name == other->name && this->isNeg == other->isNeg;
+		return this->name == other->name && this->_isNeg == other->_isNeg;
 	}
 	return false;
 }
