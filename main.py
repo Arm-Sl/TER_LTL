@@ -16,7 +16,7 @@ from FormulaSet import FormulaSet
 
 
 litterals : List[Variable] = list()
-formula = readFormule("Fr&G(r>!d)", litterals)
+formula = readFormule("F(r)&G(r>!d)", litterals)
 
 fct = InterpretationFunction(2)
 fct.add(0, d=Interpretation.TRUE, r=Interpretation.UNKNOWN)
