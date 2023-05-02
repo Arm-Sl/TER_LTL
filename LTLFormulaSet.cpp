@@ -63,11 +63,11 @@ std::unique_ptr<LTLFormula>* LTLFormulaSet::addFormulas(size_t size)
 	return &this->formulas[oldSize];
 }
 
-bool LTLFormulaSet::foundInFormula(const std::vector<std::unique_ptr<LTLFormula>>& vec, const std::unique_ptr<LTLFormula>& ptr) const
+bool LTLFormulaSet::containsFormula(const LTLFormula* const ptr) const
 {
-	for (int i = 0; i < vec.size(); i++)
+	for (int i = 0; i < this->formulas.size(); i++)
 	{
-		if (*vec[i] == *ptr)
+		if (*this->formulas[i] == *ptr)
 			return true;
 	}
 	return false;
@@ -91,7 +91,7 @@ std::vector<LTLFormulaSet> LTLFormulaSet::fullExpansion() const
 			std::vector<std::unique_ptr<LTLFormula>> comps = fullExpansion[0].formulas[fullExpansion[0].readIndex]->getComponents();
 			for (auto& comp : comps)
 			{
-				if(!this->foundInFormula(fullExpansion[0].formulas, comp))
+				if(!fullExpansion[0].containsFormula(comp.get()))
 					fullExpansion[0].formulas.push_back(std::move(comp));
 			}
 			break;
@@ -103,13 +103,13 @@ std::vector<LTLFormulaSet> LTLFormulaSet::fullExpansion() const
 			for (int j = 1; j < comps.size(); j++)
 			{
 				LTLFormulaSet newSet(fullExpansion[0]);
-				if (!this->foundInFormula(newSet.formulas, comps[j]))
+				if (!newSet.containsFormula(comps[j].get()))
 					newSet.formulas.push_back(std::move(comps[j]));
 				newSet.readIndex++;
 				std::vector<LTLFormulaSet> fe = newSet.fullExpansion();
 				fullExpansion.insert(fullExpansion.end(), std::make_move_iterator(fe.begin()), std::make_move_iterator(fe.end()));
 			}
-			if (!this->foundInFormula(fullExpansion[0].formulas, comps[0]))
+			if (!fullExpansion[0].containsFormula(comps[0].get()))
 				fullExpansion[0].formulas.push_back(std::move(comps[0]));
 			break;
 		}

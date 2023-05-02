@@ -2,12 +2,15 @@
 #include "LTLFormula.h"
 #include "LTLFormulaSet.h"
 #include "Model.h"
-#include "Tableau.h"
+#include "PreTableau.h"
 
 class A
 {
 public:
 	A() {};
+	A(const A& a) = delete; //copy constructor
+	A(A&& a) {}; //move constructor
+
 	~A() {};
 	void feur() {};
 private:
@@ -41,14 +44,19 @@ int main(int argc, char *argv[])
 	model.setSuccessors(1, { 0, 1 });
 	model.setInt(0, 'd', Interpretation::TRUE);
 
-	Tableau tab(&model, LTLFormula::readFormule("Fr&G(r>!d)", variableNames));
-	tab.preTableauComputation();
+	PreTableau preTab(&model, LTLFormula::readFormule("Fr&G(r>!d)", variableNames));
+	preTab.preTableauComputation();
 
 	std::cout << "PreTableau Computation finished" << std::endl;
-	std::cout << "State count : " << tab.states.size() << ", Prestate count : " << tab.preStates.size() << "    " << TableauState::lastID  << std::endl;
+	std::cout << "State count : " << preTab.states.size() << ", Prestate count : " << preTab.preStates.size() << "    " << PreTableauState::lastID  << std::endl;
 
 
-	
+	Tableau tab = preTab.convertToTableau();
+	std::cout << "State count : " << tab.states.size() << std::endl;
+	tab.tableauComputation();
+	std::cout << "State count : " << tab.states.size() << std::endl;
+
+	tab.print();
 
 	//TableauState* s0 = tab.preStates[0].get();
 	//std::cout << "0 : " << s0->getChildren().size() << "     " << s0->id << std::endl;
@@ -87,7 +95,7 @@ int main(int argc, char *argv[])
 	//std::cout << s4->getFormulas().operator std::string() << std::endl;
 	//std::cout << s16->getFormulas().operator std::string() << std::endl;
 
-	std::cout << "Size : " << sizeof(A) << std::endl;
-	A ab;
+	//std::cout << "Size : " << sizeof(A) << std::endl;
+	//A ab;
 	getchar();
 }

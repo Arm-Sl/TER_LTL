@@ -31,7 +31,7 @@ public:
 	operator std::string() const;
 	bool operator==(const LTLFormulaSet& other) const;
 
-	bool foundInFormula(const std::vector<std::unique_ptr<LTLFormula>>& vec, const std::unique_ptr<LTLFormula>& ptr) const;
+	bool containsFormula(const LTLFormula* const ptr) const;
 
 	std::vector<std::unique_ptr<LTLFormula>>::const_iterator begin() const;
 	std::vector<std::unique_ptr<LTLFormula>>::const_iterator end() const;

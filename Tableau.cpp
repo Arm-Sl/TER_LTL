@@ -1,53 +1,56 @@
 #include "Tableau.h"
-#include "LTLFormula.h"
+
+#include <algorithm>
+//TODO remove, for tests
 #include <iostream>
-
-
-#pragma region TableauState
-
-TableauState::TableauState(int state, LTLFormulaSet&& formulas, const InterpretationFunction& interpretation) :
-	state(state),
-	formulas(std::move(formulas)),
-	interpretation(interpretation)
-{
-}
-
-TableauState::TableauState(int state, LTLFormulaSet && formulas, InterpretationFunction && interpretation) :
-state(state),
-formulas(std::move(formulas)),
-interpretation(std::move(interpretation))
-{
-}
-
-TableauState::~TableauState()
-{
-}
-
-
-void TableauState::addChild(TableauState& child)
-{
-	this->children.push_back(&child);
-	child.parents.push_back(this);
-}
-
-bool TableauState::operator==(const TableauState & other) const
-{
-//	std::cout << "\t" << a << "  " << (this->state == other.state) << "  " << (this->formulas == other.formulas) << "  " << (this->interpretation == other.interpretation)  << std::endl;;
-	return this->state == other.state && this->formulas == other.formulas && this->interpretation == other.interpretation;
-}
-
-int TableauState::lastID = 0;
-
-#pragma endregion
+#include "LTLFormula.h"
+#include "PreTableau.h"
 
 
 
+
+//
+//#pragma region TableauState
+//
+//TableauState::TableauState(int state, LTLFormulaSet&& formulas, const InterpretationFunction& interpretation) :
+//	state(state),
+//	formulas(std::move(formulas)),
+//	interpretation(interpretation)
+//{
+//	this->id = TableauState::lastID++;
+//}
+//
+//TableauState::TableauState(int state, LTLFormulaSet&& formulas, InterpretationFunction&& interpretation) :
+//	state(state),
+//	formulas(std::move(formulas)),
+//	interpretation(std::move(interpretation))
+//{
+//	this->id = TableauState::lastID++;
+//}
+//
+//
+//TableauState::~TableauState()
+//{
+//}
+//
+//
+//bool TableauState::operator==(const TableauState & other) const
+//{
+//	return this->state == other.state && this->formulas == other.formulas && this->interpretation == other.interpretation;
+//}
+//
+//int TableauState::lastID = 0;
+//
+//#pragma endregion
+//
 
 
 #pragma region Tableau
-Tableau::Tableau(Model* model, std::unique_ptr<LTLFormula>&& formula) :
+
+Tableau::Tableau(Model* model, std::unique_ptr<LTLFormula>&& formula, std::vector<std::unique_ptr<PreTableauState>>&& states):
 	model(model),
-	formula(std::move(formula))
+	formula(std::move(formula)),
+	states(std::move(states))
 {
 }
 
@@ -57,154 +60,108 @@ Tableau::~Tableau()
 }
 
 
-void Tableau::createInitialState()
+void Tableau::stateElim1()
 {
-	LTLFormulaSet set;
-	set.addFormula(this->formula->copy());
-	const auto& ints = this->model->getInterpretationFunction().getInterpretations(0);
-	std::unique_ptr<LTLFormula>* formula = set.addFormulas(ints.size());
+	//suppr all states without any sucessors
 
-	for (const auto& interp : ints)
+	for (const auto& state : this->states)
 	{
-		formula++->reset(new VariableOp(interp.first, interp.second == Interpretation::FALSE));
+		if (!state->isDissociated() && state->getChildren().size() == 0)
+			state->dissociate(true, false);
 	}
 
 
-	this->preStates.push_back(std::make_unique<TableauState>(0, std::move(set), this->model->getInterpretationFunction()));
-	this->rootState = this->preStates.back().get();
-	this->rootState->setId();
-	this->currentPreStates.push_back(this->rootState);
 }
 
-
-void Tableau::expRule()
+void Tableau::stateElim2()
 {
-	for (const auto& prestate : this->currentPreStates)
+	for (const auto& state : this->states)
 	{
-		std::vector<LTLFormulaSet> fullExp = prestate->getFormulas().fullExpansion();
+		if (state->isDissociated())
+			continue;
 
-		for (LTLFormulaSet& formulaSet : fullExp)
+
+		for (const auto& formula : state->getFormulas())
 		{
-			//update interpretation function
+			LTLFormula* f = formula->getEventuality();
 
-			InterpretationFunction inter = prestate->getInterpretationFunction();
-
-			for (VariableOp* var : formulaSet.getLitterals())
+			if (f != nullptr)
 			{
-				if (inter.get(prestate->getState(), var->getName()) == Interpretation::UNKNOWN)
-					inter.set(prestate->getState(), var->getName(), var->isNeg() ? Interpretation::FALSE : Interpretation::TRUE);
-			}
-
-			TableauState newState(prestate->getState(), std::move(formulaSet), std::move(inter));
-
-
-			//check if state already present
-			bool stateAlreadyPresent = false;
-
-			for (auto& state : this->states)
-			{
-				if (*state == newState)
+				std::vector<const PreTableauState*> alreadyVisitedStates;
+				if (!this->isEventualityRealised(f, state.get(), alreadyVisitedStates))
 				{
-					prestate->addChild(*state);
-					stateAlreadyPresent = true;
+					state->dissociate(true, true);
 					break;
 				}
 			}
-
-
-			//don't add offspring State if model state has no successors
-
-			if (!stateAlreadyPresent && this->model->getSuccessors(prestate->getState()).size() > 0)
-			{
-				newState.setId();
-				this->states.push_back(std::make_unique<TableauState>(std::move(newState)));
-
-				TableauState* newStatePointer = this->states.back().get();
-
-				prestate->addChild(*newStatePointer);
-				this->currentStates.push_back(newStatePointer);
-			}
-
 		}
 	}
-
-	this->currentPreStates.clear();
 }
 
-
-
-void Tableau::nextRule()
+bool Tableau::isEventualityRealised(const LTLFormula * eventuality, const PreTableauState * fromState, std::vector<const PreTableauState*>& alreadyVisitedStates) const
 {
-	for (const auto& state : this->currentStates)
+	alreadyVisitedStates.push_back(fromState);
+
+	if (fromState->getFormulas().containsFormula(eventuality))
+		return true;
+
+	for (const PreTableauState* child : fromState->getChildren())
 	{
-		for (int modelState : this->model->getSuccessors(state->getState()))
+		if (std::find(alreadyVisitedStates.begin(), alreadyVisitedStates.end(), child) == alreadyVisitedStates.end())
 		{
-			//calculate scomp
-
-			std::vector<std::unique_ptr<LTLFormula>> scomps;
-			
-			for (const auto& formula : state->getFormulas())
-			{
-				if (formula->getOperatorType() == OperatorType::SUCCESSOR)
-					for (auto& comp : formula->getComponents())
-						scomps.push_back(std::move(comp));
-			}
-
-			//create formula set
-			LTLFormulaSet formulaSet;
-			std::unique_ptr<LTLFormula>* currFormula = formulaSet.addFormulas(scomps.size() + state->getInterpretationFunction().getInterpretations(modelState).size());
-			
-			for (auto& comp : scomps)
-				currFormula++->swap(comp);
-
-			//add litterals
-			for (const auto& litteral : state->getInterpretationFunction().getInterpretations(modelState))
-			{
-				currFormula++->reset(new VariableOp(litteral.first, litteral.second == Interpretation::FALSE));
-			}
-
-			TableauState newPreState(modelState, std::move(formulaSet), state->getInterpretationFunction());
-
-			//check if prestate is already present
-			bool preStateAlreadyPresent = false;
-
-			for (auto& alreadyPresentPrestate : this->preStates)
-			{
-				if (*alreadyPresentPrestate == newPreState)
-				{
-					state->addChild(*alreadyPresentPrestate);
-					preStateAlreadyPresent = true;
-					break;
-				}
-			}
-
-			if (!preStateAlreadyPresent)
-			{
-				newPreState.setId();
-				this->preStates.push_back(std::make_unique<TableauState>(std::move(newPreState)));
-				TableauState* newPreStatePointer = this->preStates.back().get();
-
-				state->addChild(*newPreStatePointer);
-				this->currentPreStates.push_back(newPreStatePointer);
-			}
-
+			if (isEventualityRealised(eventuality, child, alreadyVisitedStates))
+				return true;
 		}
 	}
 
-	this->currentStates.clear();
+	return false;
+}
+
+void Tableau::tableauComputation()
+{
+	size_t oldStateCount = 0;
+	size_t oldOldStateCount = 0;
+
+	while (oldStateCount != this->states.size() || oldOldStateCount != this->states.size())
+	{
+		oldOldStateCount = oldStateCount;
+		oldStateCount = this->states.size();
+		this->stateElim1();
+		this->stateElim2();
+
+		this->states.erase(std::remove_if(this->states.begin(), this->states.end(), [](const std::unique_ptr<PreTableauState>& x) 
+		{
+			return x->isDissociated();
+		}), this->states.end());
+	}
 }
 
 
-void Tableau::preTableauComputation()
+void Tableau::print()
 {
-	this->createInitialState();
+	std::cout << std::endl << std::endl << "Tableau : " << std::endl;
+	std::cout << this->states.size() << " States : " << std::endl;
 
-	while (this->currentPreStates.size() > 0 || this->currentStates.size() > 0)
+	for (const auto& state : this->states)
 	{
-		this->expRule();
-		this->nextRule();
+		std::cout << "\t" << state->id << " : ";
+		
+		for (const auto& formula : state->getFormulas())
+		{
+			std::cout << formula->operator std::string() << ", ";
+		}
+		std::cout << std::endl;
+		std::cout << "\t\t" << state->getChildren().size() << " Children : ";
+
+		for (const auto& child : state->getChildren())
+		{
+			std::cout << child->id << ", ";
+		}
+		std::cout << std::endl;
+
 	}
+
+	
 }
 #pragma endregion
-
 

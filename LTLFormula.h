@@ -21,7 +21,9 @@ public:
 
 	virtual OperatorType getOperatorType() const = 0;
 	virtual std::vector<std::unique_ptr<LTLFormula>> getComponents() const = 0;
-	
+	///<summary> <returns> Returns a <see cref="LTLFormula"/> that must be true in the future, or nullptr if not needed</returns> </summary>
+	virtual LTLFormula* getEventuality() const = 0;
+
 	///<summary> Return a copy of this <see cref="LTLFormula"/>, negated</summary>
 	virtual std::unique_ptr<LTLFormula> neg() const = 0;
 	virtual std::unique_ptr<LTLFormula> copy() const = 0;
@@ -52,6 +54,7 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::SUCCESSOR; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
+	LTLFormula* getEventuality() const override { return nullptr; };
 
 	std::unique_ptr<LTLFormula> copy() const override;
 	
@@ -75,6 +78,7 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::CONJONCTIVE; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
+	LTLFormula* getEventuality() const override { return nullptr; };
 
 	std::unique_ptr<LTLFormula> copy() const override;
 
@@ -98,6 +102,7 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::DISJONCTIVE; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
+	LTLFormula* getEventuality() const override { return this->operand.get(); };
 
 	std::unique_ptr<LTLFormula> copy() const override;
 
@@ -125,6 +130,7 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::DISJONCTIVE; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
+	LTLFormula* getEventuality() const override { return this->rightOperand.get(); };
 
 	std::unique_ptr<LTLFormula> copy() const override;
 
@@ -150,6 +156,7 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::CONJONCTIVE; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
+	LTLFormula* getEventuality() const override { return nullptr; };
 
 	std::unique_ptr<LTLFormula> copy() const override;
 
@@ -175,6 +182,7 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::CONJONCTIVE; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
+	LTLFormula* getEventuality() const override { return nullptr; };
 
 	std::unique_ptr<LTLFormula> copy() const override;
 
@@ -200,6 +208,7 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::DISJONCTIVE; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
+	LTLFormula* getEventuality() const override { return nullptr; };
 
 	std::unique_ptr<LTLFormula> copy() const override;
 
@@ -225,6 +234,7 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::DISJONCTIVE; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
+	LTLFormula* getEventuality() const override { return nullptr; };
 
 	std::unique_ptr<LTLFormula> copy() const override;
 
@@ -248,7 +258,8 @@ public:
 	OperatorType getOperatorType() const override { return OperatorType::VARIABLE; }
 	std::vector<std::unique_ptr<LTLFormula>> getComponents() const override;
 	std::unique_ptr<LTLFormula> neg() const override;
-
+	LTLFormula* getEventuality() const override { return nullptr; };
+ 
 	std::unique_ptr<LTLFormula> copy() const override;
 
 	char getName() const { return this->name; };
