@@ -32,6 +32,7 @@ public:
 	void setId() { this->id = PreTableauState::lastID++; };
 	int id;
 	static int lastID;
+	static void resetNextIds() { PreTableauState::lastID = 0; };
 private:
 	int state;
 	LTLFormulaSet formulas;

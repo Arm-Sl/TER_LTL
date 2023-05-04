@@ -242,6 +242,7 @@ Tableau PreTableau::convertToTableau()
 	std::vector<std::unique_ptr<PreTableauState>> states;
 	std::map<PreTableauState*, PreTableauState*> correspondingState;
 
+	PreTableauState::resetNextIds();
 	for (const auto& prestate : this->preStates)
 	{
 
@@ -253,6 +254,7 @@ Tableau PreTableau::convertToTableau()
 			if (auto it = correspondingState.find(parent); it == correspondingState.end())
 			{
 				currentparentTableau = states.emplace_back(new PreTableauState(parent->getState(), std::move(parent->getFormulas()), std::move(parent->getInterpretationFunction()))).get();
+				currentparentTableau->setId();
 				correspondingState.insert_or_assign(parent, currentparentTableau);
 			}
 			else
@@ -264,6 +266,7 @@ Tableau PreTableau::convertToTableau()
 				if (auto it = correspondingState.find(child); it == correspondingState.end())
 				{
 					currentChildTableau = states.emplace_back(new PreTableauState(child->getState(), std::move(child->getFormulas()), std::move(child->getInterpretationFunction()))).get();
+					currentChildTableau->setId();
 					correspondingState.insert_or_assign(child, currentChildTableau);
 				}
 				else
