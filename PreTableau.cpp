@@ -238,34 +238,34 @@ void PreTableau::preTableauComputation()
 Tableau PreTableau::convertToTableau()
 {
 	//prestateElim + StateElim1
-	//TODO StateElim1
-	std::vector<std::unique_ptr<PreTableauState>> states;
-	std::map<PreTableauState*, PreTableauState*> correspondingState;
+	std::vector<std::unique_ptr<TableauState>> states;
+	std::map<PreTableauState*, TableauState*> correspondingState;
+	std::vector<TableauState*> roots;
+	roots.reserve(this->rootState->getChildren().size());
 
 	PreTableauState::resetNextIds();
-	for (const auto& prestate : this->preStates)
+	for (const std::unique_ptr<PreTableauState>& prestate : this->preStates)
 	{
-
-		std::cout << "\t" << prestate->id << std::endl;
-
-		for (auto& parent : prestate->getParents())
+		for (PreTableauState* parent : prestate->getParents())
 		{
-			PreTableauState* currentparentTableau;
+			TableauState* currentparentTableau;
 			if (auto it = correspondingState.find(parent); it == correspondingState.end())
 			{
-				currentparentTableau = states.emplace_back(new PreTableauState(parent->getState(), std::move(parent->getFormulas()), std::move(parent->getInterpretationFunction()))).get();
+				currentparentTableau = states.emplace_back(new TableauState(parent->getState(), std::move(parent->getFormulas()), std::move(parent->getInterpretationFunction()))).get();
 				currentparentTableau->setId();
+				if (parent == this->rootState)
+					roots.push_back(currentparentTableau);
 				correspondingState.insert_or_assign(parent, currentparentTableau);
 			}
 			else
 				currentparentTableau = it->second;
 
-			for (auto& child : prestate->getChildren())
+			for (PreTableauState* child : prestate->getChildren())
 			{
-				PreTableauState* currentChildTableau;
+				TableauState* currentChildTableau;
 				if (auto it = correspondingState.find(child); it == correspondingState.end())
 				{
-					currentChildTableau = states.emplace_back(new PreTableauState(child->getState(), std::move(child->getFormulas()), std::move(child->getInterpretationFunction()))).get();
+					currentChildTableau = states.emplace_back(new TableauState(child->getState(), std::move(child->getFormulas()), std::move(child->getInterpretationFunction()))).get();
 					currentChildTableau->setId();
 					correspondingState.insert_or_assign(child, currentChildTableau);
 				}
@@ -277,7 +277,7 @@ Tableau PreTableau::convertToTableau()
 		}
 	}
 		
-	return Tableau(this->model, std::move(this->formula), std::move(states));
+	return Tableau(this->model, std::move(this->formula), std::move(states), std::move(roots));
 }
 
 #pragma endregion

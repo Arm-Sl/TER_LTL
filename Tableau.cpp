@@ -1,8 +1,6 @@
 #include "Tableau.h"
 
 #include <algorithm>
-//TODO remove, for tests
-#include <iostream>
 #include "LTLFormula.h"
 #include "PreTableau.h"
 
@@ -47,10 +45,11 @@
 
 #pragma region Tableau
 
-Tableau::Tableau(Model* model, std::unique_ptr<LTLFormula>&& formula, std::vector<std::unique_ptr<PreTableauState>>&& states):
+Tableau::Tableau(Model* model, std::unique_ptr<LTLFormula>&& formula, std::vector<std::unique_ptr<TableauState>>&& states, std::vector<TableauState*>&& rootStates):
 	model(model),
 	formula(std::move(formula)),
-	states(std::move(states))
+	states(std::move(states)),
+	roots(rootStates)
 {
 }
 
@@ -87,7 +86,7 @@ void Tableau::stateElim2()
 
 			if (f != nullptr)
 			{
-				std::vector<const PreTableauState*> alreadyVisitedStates;
+				std::vector<const TableauState*> alreadyVisitedStates;
 				if (!this->isEventualityRealised(f, state.get(), alreadyVisitedStates))
 				{
 					state->dissociate(true, true);
@@ -98,14 +97,14 @@ void Tableau::stateElim2()
 	}
 }
 
-bool Tableau::isEventualityRealised(const LTLFormula * eventuality, const PreTableauState * fromState, std::vector<const PreTableauState*>& alreadyVisitedStates) const
+bool Tableau::isEventualityRealised(const LTLFormula * eventuality, const TableauState * fromState, std::vector<const TableauState*>& alreadyVisitedStates) const
 {
 	alreadyVisitedStates.push_back(fromState);
 
 	if (fromState->getFormulas().containsFormula(eventuality))
 		return true;
 
-	for (const PreTableauState* child : fromState->getChildren())
+	for (const TableauState* child : fromState->getChildren())
 	{
 		if (std::find(alreadyVisitedStates.begin(), alreadyVisitedStates.end(), child) == alreadyVisitedStates.end())
 		{
@@ -129,7 +128,7 @@ void Tableau::tableauComputation()
 		this->stateElim1();
 		this->stateElim2();
 
-		this->states.erase(std::remove_if(this->states.begin(), this->states.end(), [](const std::unique_ptr<PreTableauState>& x) 
+		this->states.erase(std::remove_if(this->states.begin(), this->states.end(), [](const std::unique_ptr<TableauState>& x) 
 		{
 			return x->isDissociated();
 		}), this->states.end());
@@ -137,31 +136,32 @@ void Tableau::tableauComputation()
 }
 
 
-void Tableau::print()
+
+Tableau::operator std::string() const
 {
-	std::cout << std::endl << std::endl << "Tableau : " << std::endl;
-	std::cout << this->states.size() << " States : " << std::endl;
+	std::string str;
+
+	str += "\n\nTableau : \n" + std::to_string(this->states.size()) + " States : \n";
 
 	for (const auto& state : this->states)
 	{
-		std::cout << "\t" << state->id << " : ";
-		
+		str += "\t" + std::to_string(state->id) + " : ";
+
 		for (const auto& formula : state->getFormulas())
 		{
-			std::cout << formula->operator std::string() << ", ";
+			str += formula->operator std::string() + ", ";
 		}
-		std::cout << std::endl;
-		std::cout << "\t\t" << state->getChildren().size() << " Children : ";
+		str += "\n\t\t" + std::to_string(state->getChildren().size()) + " Children : ";
 
 		for (const auto& child : state->getChildren())
 		{
-			std::cout << child->id << ", ";
+			str += std::to_string(child->id) + ", ";
 		}
-		std::cout << std::endl;
+		str += "\n";
 
 	}
 
-	
+	return str;
 }
 #pragma endregion
 

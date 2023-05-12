@@ -35,7 +35,6 @@ int main(int argc, char *argv[])
 	for (const auto& fexpEntry : fexp)
 	{
 		std::cout << fexpEntry.operator std::string() << std::endl << std::endl;
-
 	}
 
 	std::cout << "PRETABLEAU : " << sizeof(A) << std::endl;
@@ -52,11 +51,11 @@ int main(int argc, char *argv[])
 
 
 	Tableau tab = preTab.convertToTableau();
-	std::cout << "State count : " << tab.states.size() << std::endl;
+	std::cout << "State count : " << tab.getStateCount() << std::endl;
 	tab.tableauComputation();
-	std::cout << "State count : " << tab.states.size() << std::endl;
+	std::cout << "State count : " << tab.getStateCount() << std::endl;
 
-	tab.print();
+	std::cout << tab.operator std::string();
 
 	//TableauState* s0 = tab.preStates[0].get();
 	//std::cout << "0 : " << s0->getChildren().size() << "     " << s0->id << std::endl;
