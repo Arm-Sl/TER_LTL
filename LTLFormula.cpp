@@ -13,7 +13,7 @@ LTLFormula::~LTLFormula()
 }
 
 
-std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s, std::set<char>& variableNames)
+std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s)
 {
 	int parentheseDeepness = 0;
 
@@ -90,15 +90,15 @@ std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s, std::set<char
 		switch (s[maxBinaryOpIndex])
 		{
 		case UntilOp::SYMBOL:
-			return std::make_unique<UntilOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
+			return std::make_unique<UntilOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
 		case ReleaseOp::SYMBOL:
-			return std::make_unique<ReleaseOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
+			return std::make_unique<ReleaseOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
 		case AndOp::SYMBOL:
-			return std::make_unique<AndOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
+			return std::make_unique<AndOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
 		case OrOp::SYMBOL:
-			return std::make_unique<OrOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
+			return std::make_unique<OrOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
 		case ImpliesOp::SYMBOL:
-			return std::make_unique<ImpliesOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex), variableNames), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1), variableNames));
+			return std::make_unique<ImpliesOp>(LTLFormula::readFormule(s.substr(0, maxBinaryOpIndex)), LTLFormula::readFormule(s.substr(maxBinaryOpIndex + 1)));
 		default:
 			break;
 		}
@@ -108,19 +108,19 @@ std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s, std::set<char
 		switch (s[firstUnaryIndex])
 		{
 		case '!':
-			return readFormule(s.substr(firstUnaryIndex + 1), variableNames)->neg();
+			return readFormule(s.substr(firstUnaryIndex + 1))->neg();
 		case NextOp::SYMBOL:
-			return std::make_unique<NextOp>(readFormule(s.substr(firstUnaryIndex + 1), variableNames));
+			return std::make_unique<NextOp>(readFormule(s.substr(firstUnaryIndex + 1)));
 		case GloballyOp::SYMBOL:
-			return std::make_unique<GloballyOp>(readFormule(s.substr(firstUnaryIndex + 1), variableNames));
+			return std::make_unique<GloballyOp>(readFormule(s.substr(firstUnaryIndex + 1)));
 		case FinallyOp::SYMBOL:
-			return std::make_unique<FinallyOp>(readFormule(s.substr(firstUnaryIndex + 1), variableNames));
+			return std::make_unique<FinallyOp>(readFormule(s.substr(firstUnaryIndex + 1)));
 		default:
 			break;
 		}
 	}
 	else if (firstOpenParenthesIndex > -1)
-		return readFormule(s.substr(firstOpenParenthesIndex + 1, lastCloseParenthesIndex - firstOpenParenthesIndex - 1), variableNames);
+		return readFormule(s.substr(firstOpenParenthesIndex + 1, lastCloseParenthesIndex - firstOpenParenthesIndex - 1));
 	else
 	{
 		char name = 0;
@@ -132,7 +132,7 @@ std::unique_ptr<LTLFormula> LTLFormula::readFormule(std::string s, std::set<char
 				break;
 			}
 		}
-		variableNames.emplace(name);
+//		variableNames.emplace(name);
 		return std::make_unique<VariableOp>(name);
 
 	}

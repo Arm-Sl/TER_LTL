@@ -7,7 +7,7 @@
 
 PreTableauState::PreTableauState(int state, LTLFormulaSet&& formulas, const InterpretationFunction& interpretation) :
 	state(state),
-	formulas(std::move(formulas)),
+	formulas(formulas),
 	interpretation(interpretation)
 {
 }
@@ -73,7 +73,7 @@ int PreTableauState::lastID = 0;
 
 
 #pragma region PreTableau
-PreTableau::PreTableau(Model* model, std::unique_ptr<LTLFormula>&& formula) :
+PreTableau::PreTableau(const Model* model, LTLFormula* formula) :
 	model(model),
 	formula(std::move(formula))
 {
@@ -253,9 +253,9 @@ Tableau PreTableau::convertToTableau()
 			{
 				currentparentTableau = states.emplace_back(new TableauState(parent->getState(), std::move(parent->getFormulas()), std::move(parent->getInterpretationFunction()))).get();
 				currentparentTableau->setId();
-				if (parent == this->rootState)
-					roots.push_back(currentparentTableau);
+
 				correspondingState.insert_or_assign(parent, currentparentTableau);
+
 			}
 			else
 				currentparentTableau = it->second;
@@ -275,6 +275,12 @@ Tableau PreTableau::convertToTableau()
 				currentparentTableau->addChild(*currentChildTableau);
 			}
 		}
+	}
+
+	for (const auto& s : states)
+	{
+		if (s->getFormulas().containsFormula(this->formula))
+			roots.push_back(s.get());
 	}
 		
 	return Tableau(this->model, std::move(this->formula), std::move(states), std::move(roots));

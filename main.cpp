@@ -3,6 +3,7 @@
 #include "LTLFormulaSet.h"
 #include "Model.h"
 #include "PreTableau.h"
+#include "Solver.h"
 
 class A
 {
@@ -18,16 +19,69 @@ private:
 };
 
 
+void printHelp()
+{
+	std::cout << "Partial model checking and partial model synthesis in LTL\n\
+Help : args, in order : \n\
+\t- model file location \n\
+\t- LTL fomula, with operators \n\
+\t\t- G : Globally \n\
+\t\t- F : Finally \n\
+\t\t- N : Next \n\
+\t\t- U : Until\n\
+\t\t- R : Release\n\
+\t\t- ! : not\n\
+\t\t- & : logical and\n\
+\t\t- | : logical or\n\
+\t\t- > : implies\n\
+\t- problem to solve, in : \n\
+\t\t- EE\n\
+\t\t- AA\n\
+\t-optional : v for verbose";
+
+	getchar();
+}
+
 int main(int argc, char *argv[])
 {
-	
-	std::set<char> variableNames;
-	auto s = LTLFormula::readFormule("(a&b)|c", variableNames);
+	if (argc != 4 && argc != 5)
+	{
+		printHelp();
+		return 0;
+	}
+	Model model(argv[1], false);
+
+	//Solver solver(&model, LTLFormula::readFormule("Fr&G(r>!d)"));
+	Solver solver(&model, LTLFormula::readFormule(argv[2]));
+
+	std::string problem(argv[3]);
+	if (problem == "EE")
+	{
+		bool res = solver.solveEE(argc == 5);
+
+		std::cout << "\n\n Result to EE problem : " << (res ? "True" : "False") << std::endl;
+	}
+	else if (problem == "AA")
+	{
+		bool res = solver.solveAA(argc == 5);
+
+		std::cout << "\n\n Result to AA problem : " << (res ? "True" : "False") << std::endl;
+
+	}
+
+	getchar();
+
+	return 0;
+}
+
+int mainTest(int argc, char *argv[])
+{
+	auto s = LTLFormula::readFormule("(a&b)|c");
 	
 	std::cout << s->operator std::string() << std::endl;
 
 
-	LTLFormulaSet fs(LTLFormula::readFormule("Fr&G(r>!d)", variableNames));
+	LTLFormulaSet fs(LTLFormula::readFormule("Fr&G(r>!d)"));
 	auto fexp = fs.fullExpansion();
 
 
@@ -43,7 +97,10 @@ int main(int argc, char *argv[])
 	model.setSuccessors(1, { 0, 1 });
 	model.setInt(0, 'd', Interpretation::TRUE);
 
-	PreTableau preTab(&model, LTLFormula::readFormule("Fr&G(r>!d)", variableNames));
+	std::cout << model.operator std::string() << std::endl;
+
+	std::unique_ptr<LTLFormula> formula = LTLFormula::readFormule("Fr&G(r>!d)");
+	PreTableau preTab(&model, formula.get());
 	preTab.preTableauComputation();
 
 	std::cout << "PreTableau Computation finished" << std::endl;
@@ -97,4 +154,6 @@ int main(int argc, char *argv[])
 	//std::cout << "Size : " << sizeof(A) << std::endl;
 	//A ab;
 	getchar();
+
+	return 0;
 }

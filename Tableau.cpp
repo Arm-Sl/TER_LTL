@@ -45,9 +45,9 @@
 
 #pragma region Tableau
 
-Tableau::Tableau(Model* model, std::unique_ptr<LTLFormula>&& formula, std::vector<std::unique_ptr<TableauState>>&& states, std::vector<TableauState*>&& rootStates):
+Tableau::Tableau(const Model* model, LTLFormula* formula, std::vector<std::unique_ptr<TableauState>>&& states, std::vector<TableauState*>&& rootStates):
 	model(model),
-	formula(std::move(formula)),
+	formula(formula),
 	states(std::move(states)),
 	roots(rootStates)
 {
@@ -66,7 +66,15 @@ void Tableau::stateElim1()
 	for (const auto& state : this->states)
 	{
 		if (!state->isDissociated() && state->getChildren().size() == 0)
+		{
 			state->dissociate(true, false);
+
+			//remove from roots
+			if (auto it = std::find(this->roots.begin(), this->roots.end(), state.get()); it != this->roots.end())
+			{
+				this->roots.erase(it);
+			}
+		}
 	}
 
 
@@ -90,6 +98,12 @@ void Tableau::stateElim2()
 				if (!this->isEventualityRealised(f, state.get(), alreadyVisitedStates))
 				{
 					state->dissociate(true, true);
+
+					//remove from roots
+					if (auto it = std::find(this->roots.begin(), this->roots.end(), state.get()); it != this->roots.end())
+					{
+						this->roots.erase(it);
+					}
 					break;
 				}
 			}
@@ -162,6 +176,12 @@ Tableau::operator std::string() const
 	}
 
 	return str;
+}
+
+
+bool Tableau::isOpen() const
+{
+	return this->roots.size() > 0;
 }
 #pragma endregion
 

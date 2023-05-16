@@ -46,7 +46,7 @@ private:
 class PreTableau
 {
 public:
-	PreTableau(Model* model, std::unique_ptr<LTLFormula>&& formula);
+	PreTableau(const Model* model, LTLFormula* formula);
 	~PreTableau();
 
 
@@ -64,8 +64,8 @@ public:
 	std::vector<std::unique_ptr<PreTableauState>> preStates;
 
 private:
-	Model* const model;
-	std::unique_ptr<LTLFormula> formula;
+	const Model* const model;
+	LTLFormula* formula;
 
 
 

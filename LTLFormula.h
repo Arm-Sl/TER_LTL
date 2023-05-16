@@ -32,7 +32,7 @@ public:
 	virtual bool operator==(const LTLFormula& formula) const = 0;
 
 	///<summary> return a new LTL represented by the string s, and get all variable names</summary>
-	static std::unique_ptr<LTLFormula> readFormule(std::string s, std::set<char>& variableNames);
+	static std::unique_ptr<LTLFormula> readFormule(std::string s);
 	
 
 
