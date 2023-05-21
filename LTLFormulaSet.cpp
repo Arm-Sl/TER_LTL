@@ -57,6 +57,8 @@ void LTLFormulaSet::addFormula(std::unique_ptr<LTLFormula>&& formula)
 
 std::unique_ptr<LTLFormula>* LTLFormulaSet::addFormulas(size_t size)
 {
+	if (size == 0)
+		return nullptr;
 	size_t oldSize = this->formulas.size();
 
 	this->formulas.resize(oldSize + size);

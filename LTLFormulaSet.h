@@ -19,7 +19,7 @@ public:
 	LTLFormulaSet& operator=(LTLFormulaSet&& fs);
 
 	void addFormula(std::unique_ptr<LTLFormula>&& formula);
-	///<summary>Add null formulas and return a pointer to the first added element</summary>
+	///<summary>Add null formulas and return a pointer to the first added element or null pointer if no elements added</summary>
 	std::unique_ptr<LTLFormula>* addFormulas(size_t size);
 	size_t size() { return this->formulas.size(); }
 
